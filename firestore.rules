@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidReactionRecord(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'reactionId',
+          'reactantAName',
+          'reactantAFormula',
+          'reactantAMassG',
+          'reactantBName',
+          'reactantBFormula',
+          'reactantBMassG',
+          'balancedEquation',
+          'didReact',
+          'colorChangeSummary',
+          'stateChangeSummary',
+          'totalMassBeforeG',
+          'totalMassAfterG',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'reactionId',
+          'reactantAName',
+          'reactantAFormula',
+          'reactantAMassG',
+          'reactantBName',
+          'reactantBFormula',
+          'reactantBMassG',
+          'balancedEquation',
+          'didReact',
+          'colorChangeSummary',
+          'stateChangeSummary',
+          'totalMassBeforeG',
+          'totalMassAfterG',
+          'notes',
+          'createdAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId == userId
+        && data.ownerId.size() <= 128
+        && data.reactionId is string && data.reactionId.size() >= 1 && data.reactionId.size() <= 120
+        && data.reactantAName is string && data.reactantAName.size() >= 1 && data.reactantAName.size() <= 160
+        && data.reactantAFormula is string && data.reactantAFormula.size() >= 1 && data.reactantAFormula.size() <= 80
+        && data.reactantAMassG is number && data.reactantAMassG >= 0 && data.reactantAMassG <= 100000
+        && data.reactantBName is string && data.reactantBName.size() >= 1 && data.reactantBName.size() <= 160
+        && data.reactantBFormula is string && data.reactantBFormula.size() >= 1 && data.reactantBFormula.size() <= 80
+        && data.reactantBMassG is number && data.reactantBMassG >= 0 && data.reactantBMassG <= 100000
+        && data.balancedEquation is string && data.balancedEquation.size() >= 1 && data.balancedEquation.size() <= 400
+        && data.didReact is bool
+        && data.colorChangeSummary is string && data.colorChangeSummary.size() <= 400
+        && data.stateChangeSummary is string && data.stateChangeSummary.size() <= 400
+        && data.totalMassBeforeG is number && data.totalMassBeforeG >= 0 && data.totalMassBeforeG <= 200000
+        && data.totalMassAfterG is number && data.totalMassAfterG >= 0 && data.totalMassAfterG <= 200000
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 600))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidPracticeRecord(data, userId) {
+      return data.keys().hasAll(['ownerId', 'equationId', 'solved', 'attempts', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'equationId', 'solved', 'attempts', 'updatedAt'])
+        && data.ownerId is string
+        && data.ownerId == userId
+        && data.ownerId.size() <= 128
+        && isValidId(data.equationId)
+        && data.solved is bool
+        && data.attempts is number && data.attempts >= 1 && data.attempts <= 10000
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/reactions/{reactionDocId} {
+      allow get: if isOwner(userId) && isValidId(reactionDocId);
+      allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(userId)
+        && isValidId(reactionDocId)
+        && isValidReactionRecord(incoming(), userId)
+        && incoming().createdAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(reactionDocId)
+        && isValidReactionRecord(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['notes']);
+      allow delete: if isOwner(userId) && isValidId(reactionDocId);
+    }
+
+    match /users/{userId}/balancingProgress/{equationId} {
+      allow get: if isOwner(userId) && isValidId(equationId);
+      allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+      allow create: if isOwner(userId)
+        && isValidId(equationId)
+        && incoming().equationId == equationId
+        && isValidPracticeRecord(incoming(), userId)
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(equationId)
+        && isValidPracticeRecord(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().equationId == existing().equationId
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['solved', 'attempts', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(equationId);
+    }
+  }
+}

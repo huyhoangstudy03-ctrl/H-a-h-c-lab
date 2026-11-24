@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "ReactionHistoryRecord": {
+      "title": "ReactionHistoryRecord",
+      "description": "A chemistry laboratory experiment performed by the student, including mixed reactants, masses, balanced equation, color/state changes, and timestamp.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the student",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "reactionId": {
+          "type": "string",
+          "description": "Identifier of the reaction preset or custom pair",
+          "maxLength": 120
+        },
+        "reactantAName": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "reactantAFormula": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "reactantAMassG": {
+          "type": "number"
+        },
+        "reactantBName": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "reactantBFormula": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "reactantBMassG": {
+          "type": "number"
+        },
+        "balancedEquation": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "didReact": {
+          "type": "boolean"
+        },
+        "colorChangeSummary": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "stateChangeSummary": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "totalMassBeforeG": {
+          "type": "number"
+        },
+        "totalMassAfterG": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "reactionId",
+        "reactantAName",
+        "reactantAFormula",
+        "reactantAMassG",
+        "reactantBName",
+        "reactantBFormula",
+        "reactantBMassG",
+        "balancedEquation",
+        "didReact",
+        "colorChangeSummary",
+        "stateChangeSummary",
+        "totalMassBeforeG",
+        "totalMassAfterG",
+        "createdAt"
+      ]
+    },
+    "BalancingAttemptRecord": {
+      "title": "BalancingAttemptRecord",
+      "description": "Student progress on balancing chemical equations.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "equationId": {
+          "type": "string",
+          "maxLength": 120,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "solved": {
+          "type": "boolean"
+        },
+        "attempts": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "equationId",
+        "solved",
+        "attempts",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/reactions/{reactionDocId}": {
+      "schema": { "$ref": "#/entities/ReactionHistoryRecord" },
+      "description": "Stores saved virtual laboratory reaction runs for a user."
+    },
+    "/users/{userId}/balancingProgress/{equationId}": {
+      "schema": { "$ref": "#/entities/BalancingAttemptRecord" },
+      "description": "Stores solved status and attempt count for chemical equation balancing practice."
+    }
+  }
+}

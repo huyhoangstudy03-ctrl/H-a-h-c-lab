@@ -1,0 +1,6 @@
+{
+  "name": "Hóa Học KNTT — Phòng Lab 3D & Học Liệu 10-11-12",
+  "description": "Nền tảng học tập Hóa học Lớp 10, 11, 12 (Kết nối tri thức) tích hợp phòng thí nghiệm 3D, mô hình phân tử 3D, điện li - điện phân, công thức & quy đổi, luyện tập cân bằng phương trình và bảng tuần hoàn tương tác.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
